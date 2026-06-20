@@ -1,0 +1,125 @@
+name: ghost-supercomputer
+
+x-common-env: &common-env
+  GHOST_ENV: ${GHOST_ENV:-production}
+  TZ: ${TZ:-UTC}
+
+networks:
+  ghost:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
+  pocketbase_data:
+  n8n_data:
+  gitagent_memory:
+
+services:
+  # ============================================================
+  # Caddy — Reverse proxy, automatic HTTPS via Let's Encrypt
+  # ============================================================
+  caddy:
+    image: caddy:2.9-alpine
+    container_name: ghost-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - ghost
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+  # ============================================================
+  # PocketBase — Lightweight DB + Auth (backup/quick-auth)
+  # ============================================================
+  pocketbase:
+    image: ghcr.io/pocketbase/pocketbase:0.25.1
+    container_name: ghost-pocketbase
+    restart: unless-stopped
+    command: ["serve", "--http=0.0.0.0:8090"]
+    environment:
+      <<: *common-env
+      POCKETBASE_ADMIN_EMAIL: ${POCKETBASE_ADMIN_EMAIL:-admin@ghost.local}
+      POCKETBASE_ADMIN_PASSWORD: ${POCKETBASE_ADMIN_PASSWORD:-change_me_now}
+    volumes:
+      - pocketbase_data:/pb_data
+    networks:
+      - ghost
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  # ============================================================
+  # n8n — Workflow automation
+  # ============================================================
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: ghost-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      <<: *common-env
+      N8N_HOST: ${GHOST_PUBLIC_HOST:-localhost}
+      N8N_PORT: "5678"
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://${GHOST_PUBLIC_HOST:-localhost}:5678/}
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "false"
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-change_me}
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:-UTC}
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: ${NEON_DB_HOST}
+      DB_POSTGRESDB_PORT: "5432"
+      DB_POSTGRESDB_DATABASE: ${NEON_DB_NAME:-neondb}
+      DB_POSTGRESDB_USER: ${NEON_DB_USER}
+      DB_POSTGRESDB_PASSWORD: ${NEON_DB_PASSWORD}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - ghost
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ============================================================
+  # GitAgent — AI Agent Framework (replaces Agent Worker)
+  # ============================================================
+  gitagent:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    container_name: ghost-gitagent
+    restart: unless-stopped
+    ports:
+      - "3333:3333"
+    environment:
+      <<: *common-env
+      GITAGENT_DIR: /app/agent
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      NEON_DATABASE_URL: ${NEON_DATABASE_URL}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      CF_R2_BUCKET: ${CF_R2_BUCKET:-ghost-storage}
+      CF_R2_ENDPOINT: ${CF_R2_ENDPOINT}
+      CF_R2_ACCESS_KEY_ID: ${CF_R2_ACCESS_KEY_ID}
+      CF_R2_SECRET_ACCESS_KEY: ${CF_R2_SECRET_ACCESS_KEY}
+    volumes:
+      - gitagent_memory:/app/agent/memory
+    networks:
+      - ghost
+    deploy:
+      resources:
+        limits:
+          memory: 384M

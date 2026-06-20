@@ -1,0 +1,14 @@
+name: query_database
+description: Execute SQL queries against the Neon PostgreSQL database
+input_schema:
+  properties:
+    query:
+      type: string
+      description: SQL query to execute
+    params:
+      type: array
+      description: Query parameters for parameterized queries
+  required: [query]
+implementation:
+  script: scripts/query_db.sh
+  runtime: sh

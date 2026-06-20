@@ -1,0 +1,17 @@
+name: upload_file
+description: Upload a file to Cloudflare R2 storage
+input_schema:
+  properties:
+    file_path:
+      type: string
+      description: Local file path to upload
+    key:
+      type: string
+      description: R2 object key (destination path)
+    content_type:
+      type: string
+      description: MIME type (default: application/octet-stream)
+  required: [file_path, key]
+implementation:
+  script: scripts/upload_r2.sh
+  runtime: sh

@@ -1,0 +1,17 @@
+name: search_docs
+description: Search project documentation and codebase
+input_schema:
+  properties:
+    query:
+      type: string
+      description: Search query
+    path:
+      type: string
+      description: Directory to search (default: /app)
+    limit:
+      type: number
+      description: Max results (default: 10)
+  required: [query]
+implementation:
+  script: scripts/search.sh
+  runtime: sh

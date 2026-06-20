@@ -1,0 +1,44 @@
+spec_version: "0.1.0"
+name: ghost-supercomputer
+version: 1.0.0
+description: Ghost SuperComputer — a free, always-on AI agent that runs 24/7
+
+model:
+  preferred: "github:gpt-4o-mini"
+  fallback:
+    - "cloudflare:llama-3.1-8b-instruct"
+    - "anthropic:claude-3-haiku-20240307"
+  constraints:
+    temperature: 0.7
+    max_tokens: 4096
+
+tools:
+  - cli
+  - read
+  - write
+  - memory
+  - search_docs
+  - query_database
+  - upload_file
+  - send_notification
+
+runtime:
+  max_turns: 50
+  timeout: 120
+
+skills:
+  - code-review
+  - data-analysis
+  - web-research
+
+memory:
+  backend: neon
+  table: agent_memory
+  max_entries: 10000
+
+compliance:
+  risk_level: low
+  human_in_the_loop: false
+  recordkeeping:
+    audit_logging: true
+    retention_days: 90

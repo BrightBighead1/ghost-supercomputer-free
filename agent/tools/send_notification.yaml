@@ -1,0 +1,18 @@
+name: send_notification
+description: Send a notification via n8n webhook
+input_schema:
+  properties:
+    message:
+      type: string
+      description: Notification message
+    level:
+      type: string
+      enum: [info, warning, error]
+      description: Notification level
+    channel:
+      type: string
+      description: Notification channel (email, slack, webhook)
+  required: [message]
+implementation:
+  script: scripts/notify.sh
+  runtime: sh
