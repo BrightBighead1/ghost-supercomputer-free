@@ -1,13 +1,13 @@
 name: search_docs
-description: Search project documentation and codebase
+description: Search project documentation via Suga Meilisearch
 input_schema:
   properties:
     query:
       type: string
       description: Search query
-    path:
+    index:
       type: string
-      description: Directory to search (default: /app)
+      description: Meilisearch index name (default: ghost-docs)
     limit:
       type: number
       description: Max results (default: 10)

@@ -1,5 +1,5 @@
 name: send_notification
-description: Send a notification via n8n webhook
+description: Send a notification via Suga n8n webhook
 input_schema:
   properties:
     message:

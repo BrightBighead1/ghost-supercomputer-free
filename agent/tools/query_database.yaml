@@ -1,5 +1,5 @@
 name: query_database
-description: Execute SQL queries against the Neon PostgreSQL database
+description: Execute SQL queries against Suga PostgreSQL database
 input_schema:
   properties:
     query:

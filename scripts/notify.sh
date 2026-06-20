@@ -1,5 +1,5 @@
 #!/bin/bash
-# notify.sh — Send notification via n8n webhook
+# notify.sh — Send notification via Suga n8n webhook
 # Input: JSON on stdin with { "message": "...", "level": "...", "channel": "..." }
 # Output: JSON on stdout
 
@@ -11,7 +11,7 @@ CHANNEL=$(echo "$INPUT" | grep -o '"channel"[[:space:]]*:[[:space:]]*"[^"]*"' | 
 LEVEL=${LEVEL:-"info"}
 CHANNEL=${CHANNEL:-"webhook"}
 
-N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL:-"http://ghost-n8n:5678/webhook/ghost-notify"}
+N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL:-"http://n8n:5678/webhook/ghost-notify"}
 
 PAYLOAD=$(cat <<EOF
 {

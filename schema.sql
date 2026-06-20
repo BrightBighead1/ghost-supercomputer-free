@@ -1,5 +1,5 @@
--- Ghost SuperComputer — Neon PostgreSQL Schema
--- Run this in Neon SQL Editor after creating your project
+-- Ghost SuperComputer — Suga PostgreSQL Schema
+-- Run this in Suga PostgreSQL after creating the database
 
 -- ============================================================
 -- Agent Memory (GitAgent stores memories here)
@@ -19,7 +19,7 @@ CREATE INDEX idx_agent_memory_type ON agent_memory(memory_type);
 CREATE INDEX idx_agent_memory_created ON agent_memory(created_at);
 
 -- ============================================================
--- Users (Supabase handles auth, this is for app-level data)
+-- Users (PocketBase handles auth, this is for app-level data)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -85,15 +85,15 @@ CREATE INDEX idx_tool_calls_tool ON tool_calls(tool_name);
 CREATE INDEX idx_tool_calls_created ON tool_calls(created_at);
 
 -- ============================================================
--- Files (references to R2 storage)
+-- Files (references to MinIO storage)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS files (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     project_id UUID REFERENCES projects(id) ON DELETE SET NULL,
     filename TEXT NOT NULL,
-    r2_key TEXT NOT NULL,
-    r2_bucket TEXT NOT NULL DEFAULT 'ghost-storage',
+    minio_key TEXT NOT NULL,
+    minio_bucket TEXT NOT NULL DEFAULT 'ghost-storage',
     content_type TEXT,
     size_bytes BIGINT,
     created_at TIMESTAMPTZ DEFAULT NOW()
@@ -103,7 +103,7 @@ CREATE INDEX idx_files_user ON files(user_id);
 CREATE INDEX idx_files_project ON files(project_id);
 
 -- ============================================================
--- Usage Tracking (stay within free limits)
+-- Usage Tracking
 -- ============================================================
 CREATE TABLE IF NOT EXISTS usage_daily (
     id SERIAL PRIMARY KEY,
@@ -151,24 +151,3 @@ CREATE TRIGGER trigger_users_updated
 CREATE TRIGGER trigger_projects_updated
     BEFORE UPDATE ON projects
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
--- ============================================================
--- Row Level Security (enable for Supabase integration)
--- ============================================================
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE agent_sessions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE files ENABLE ROW LEVEL SECURITY;
-
--- Users can only see their own data
-CREATE POLICY users_own_data ON users
-    FOR ALL USING (id = auth.uid());
-
-CREATE POLICY projects_own_data ON projects
-    FOR ALL USING (user_id = auth.uid());
-
-CREATE POLICY sessions_own_data ON agent_sessions
-    FOR ALL USING (user_id = auth.uid());
-
-CREATE POLICY files_own_data ON files
-    FOR ALL USING (user_id = auth.uid());

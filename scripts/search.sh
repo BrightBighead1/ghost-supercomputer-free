@@ -1,17 +1,29 @@
 #!/bin/bash
-# search.sh — Search project files
-# Input: JSON on stdin with { "query": "...", "path": "...", "limit": N }
+# search.sh — Search via Suga Meilisearch
+# Input: JSON on stdin with { "query": "...", "index": "...", "limit": N }
 # Output: JSON on stdout
 
 INPUT=$(cat)
 QUERY=$(echo "$INPUT" | grep -o '"query"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d'"' -f4)
-PATH_DIR=$(echo "$INPUT" | grep -o '"path"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d'"' -f4)
+INDEX=$(echo "$INPUT" | grep -o '"index"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d'"' -f4)
 LIMIT=$(echo "$INPUT" | grep -o '"limit"[[:space:]]*:[[:space:]]*[0-9]*' | grep -o '[0-9]*')
 
-PATH_DIR=${PATH_DIR:-"/app"}
+INDEX=${INDEX:-"ghost-docs"}
 LIMIT=${LIMIT:-10}
 
-RESULTS=$(grep -rl "$QUERY" "$PATH_DIR" 2>/dev/null | head -n "$LIMIT")
-COUNT=$(echo "$RESULTS" | grep -c .)
+if [ -z "$MEILI_URL" ]; then
+  echo '{"error": "MEILI_URL not set"}'
+  exit 1
+fi
 
-echo "{\"results\": $(echo "$RESULTS" | jq -R -s 'split("\n") | map(select(length > 0))'), \"count\": $COUNT}"
+HEADERS=""
+if [ -n "$MEILI_API_KEY" ]; then
+  HEADERS="-H \"X-Meili-API-Key: $MEILI_API_KEY\""
+fi
+
+RESULT=$(curl -s -X POST "$MEILI_URL/indexes/$INDEX/search" \
+  -H "Content-Type: application/json" \
+  -H "X-Meili-API-Key: ${MEILI_API_KEY:-}" \
+  -d "{\"q\": \"$QUERY\", \"limit\": $LIMIT}" 2>&1)
+
+echo "$RESULT"
