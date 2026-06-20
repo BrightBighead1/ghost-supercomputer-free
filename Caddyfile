@@ -1,27 +1,22 @@
-ghost.{$GHOST_DOMAIN:-localhost} {
-    # GitAgent Web UI + API
+{$GHOST_PUBLIC_HOST:localhost} {
     handle /agent/* {
         reverse_proxy ghost-gitagent:3333
     }
 
-    # n8n Workflow Editor
     handle /n8n/* {
         uri strip_prefix /n8n
         reverse_proxy ghost-n8n:5678
     }
 
-    # PocketBase API + Admin
     handle /pb/* {
         uri strip_prefix /pb
         reverse_proxy ghost-pocketbase:8090
     }
 
-    # Default: serve web dashboard or API
     handle {
         reverse_proxy ghost-gitagent:3333
     }
 
-    # Security headers
     header {
         X-Content-Type-Options nosniff
         X-Frame-Options DENY
@@ -29,7 +24,6 @@ ghost.{$GHOST_DOMAIN:-localhost} {
         -Server
     }
 
-    # Logging
     log {
         output stdout
         format json
